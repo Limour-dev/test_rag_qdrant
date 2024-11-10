@@ -1,5 +1,7 @@
 import os
 import json
+import re
+import gzip
 import urllib.request
 import urllib.error
 
@@ -56,8 +58,53 @@ def embd(input_: list):
     return [(input_[i], data[i]['embedding']) for i in range(len(data))]
 
 
+reg_q = re.compile(r'''['"“”‘’「」『』]''')
+reg_e = re.compile(r'''[?!。？！]''')
+
+
+def readChunks(filePath):
+    with (gzip.open(filePath, 'rt', encoding='utf-8')
+          if filePath.endswith('.gz') else open(filePath, encoding='utf-8') as f):
+        retn = []
+        cache = ''
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            line = reg_q.sub(' ', line)  # 删除引号
+            if len(cache) + len(line) < 384:
+                cache += line
+                continue
+            if not bool(reg_e.findall(line)):
+                cache += line
+                retn.append(cache.strip())
+                cache = ''
+                continue
+            i = 1
+            s = 0
+            while i <= len(line):
+                if len(cache) + (i - s) < 384:  # 每 384 切一行
+                    i = (384 - len(cache)) + s
+                    if i > len(line):
+                        break
+                    cache += line[s:i]
+                    s = i
+                if line[i - 1] in ('?', '!', '。', '？', '！'):
+                    cache += line[s:i]
+                    s = i
+                    retn.append(cache.strip())
+                    cache = ''
+                i += 1
+            if len(line) > s:
+                cache += line[s:]
+
+    cache = cache.strip()
+    if cache:
+        retn.append(cache)
+    return retn
+
+
 if __name__ == '__main__':
     print(QDRANT_EMBD_URL)
     print(QDRANT_EMBD_KEY)
     test = embd(['你好'])
-
