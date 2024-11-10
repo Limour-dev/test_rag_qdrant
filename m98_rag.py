@@ -71,7 +71,7 @@ def readChunks(filePath):
             line = line.strip()
             if not line:
                 continue
-            line = reg_q.sub(' ', line)  # 删除引号
+            line = reg_q.sub(' ', line) + '\n'  # 删除引号
             if len(cache) + len(line) < 384:
                 cache += line
                 continue
