@@ -58,7 +58,7 @@ def embd(input_: list):
     return [(input_[i], data[i]['embedding']) for i in range(len(data))]
 
 
-QDRANT_RERANK_URL = os.getenv('QDRANT_RERANK_URL', 'http://localhost:8080/v1/rerank')
+QDRANT_RERANK_URL = os.getenv('QDRANT_RERANK_URL', 'http://localhost:8081/v1/rerank')
 QDRANT_RERANK_KEY = os.getenv('QDRANT_EMBD_KEY', QDRANT_EMBD_KEY)
 
 
