@@ -56,7 +56,7 @@ class RAG:
                 points=[
                     PointStruct(
                         id=ID_ + i + idx,
-                        vector=vector[1],
+                        vector=vector[1][:self.vectors_size],
                         payload={"text": vector[0]}
                     )
                     for idx, vector in enumerate(vectors)
@@ -79,7 +79,7 @@ class RAG:
         query_vector = embd([query_])
         hits = client.search(
             collection_name=self.collection_name,
-            query_vector=query_vector[0][1],
+            query_vector=query_vector[0][1][:self.vectors_size],
             limit=limit_  # Return 5 closest points
         )
         return Hits(hits, query_, limit_)
@@ -88,7 +88,7 @@ class RAG:
 if __name__ == '__main__':
     print(QDRANT_URL)
     print(QDRANT_KEY)
-    test = RAG(vectors_size=1536)
+    test = RAG(vectors_size=256)  # 256 似乎已经足够
     if test.size() <= 0:
         chunks = readChunks('./test.md')
         test.upsert(chunks)
