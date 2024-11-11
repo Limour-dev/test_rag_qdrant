@@ -88,7 +88,7 @@ class RAG:
 if __name__ == '__main__':
     print(QDRANT_URL)
     print(QDRANT_KEY)
-    test = RAG()
+    test = RAG(vectors_size=1536)
     if test.size() <= 0:
         chunks = readChunks('./test.md')
         test.upsert(chunks)

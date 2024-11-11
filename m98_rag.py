@@ -39,7 +39,7 @@ QDRANT_EMBD_KEY = os.getenv('QDRANT_EMBD_KEY', 'no-key')
 def embd(input_: list):
     response_content: str = post_json(url=QDRANT_EMBD_URL,
                                       data={
-                                          'model': 'GPT-4o',
+                                          'model': 'text-embedding-3-small',
                                           "encoding_format": "float",
                                           'input': input_
                                       },
@@ -59,7 +59,7 @@ def embd(input_: list):
 
 
 QDRANT_RERANK_URL = os.getenv('QDRANT_RERANK_URL', 'http://localhost:8081/v1/rerank')
-QDRANT_RERANK_KEY = os.getenv('QDRANT_EMBD_KEY', QDRANT_EMBD_KEY)
+QDRANT_RERANK_KEY = os.getenv('QDRANT_RERANK_KEY', QDRANT_EMBD_KEY)
 
 
 def rerank(documents_: list, query_: str, top_n_: int = 3):
@@ -135,13 +135,13 @@ def readChunks(filePath):
 if __name__ == '__main__':
     print(QDRANT_EMBD_URL)
     print(QDRANT_EMBD_KEY)
-    # test = embd(['你好'])
-    print(QDRANT_RERANK_URL)
-    print(QDRANT_RERANK_KEY)
-    test = rerank([
-        "hi",
-        "it is a bear",
-        "world",
-        "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
-        "endemic to China."
-    ], "What is panda?")
+    test = embd(['你好'])
+    # print(QDRANT_RERANK_URL)
+    # print(QDRANT_RERANK_KEY)
+    # test = rerank([
+    #     "hi",
+    #     "it is a bear",
+    #     "world",
+    #     "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
+    #     "endemic to China."
+    # ], "What is panda?")
