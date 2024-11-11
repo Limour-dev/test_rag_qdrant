@@ -33,13 +33,14 @@ def post_json(url: str, data: dict, headers: dict, decoding='utf-8'):
 
 
 QDRANT_EMBD_URL = os.getenv('QDRANT_EMBD_URL', 'http://localhost:8080/v1/embeddings')
-QDRANT_EMBD_KEY = os.getenv('QDRANT_EMBD_KEY', 'no-key')
+QDRANT_EMBD_KEY = 'Bearer ' + os.getenv('QDRANT_EMBD_KEY', 'no-key')
+QDRANT_EMBD_MODEL = os.getenv('QDRANT_EMBD_MODEL', 'text-embedding-3-small')
 
 
 def embd(input_: list):
     response_content: str = post_json(url=QDRANT_EMBD_URL,
                                       data={
-                                          'model': 'text-embedding-3-small',
+                                          'model': QDRANT_EMBD_MODEL,
                                           "encoding_format": "float",
                                           'input': input_
                                       },
@@ -58,14 +59,16 @@ def embd(input_: list):
     return [(input_[i], data[i]['embedding']) for i in range(len(data))]
 
 
+# 推荐硅基流动 https://siliconflow.cn
 QDRANT_RERANK_URL = os.getenv('QDRANT_RERANK_URL', 'http://localhost:8081/v1/rerank')
-QDRANT_RERANK_KEY = os.getenv('QDRANT_RERANK_KEY', QDRANT_EMBD_KEY)
+QDRANT_RERANK_KEY = 'Bearer ' + os.getenv('QDRANT_RERANK_KEY', QDRANT_EMBD_KEY)
+QDRANT_RERANK_MODEL = os.getenv('QDRANT_RERANK_MODEL', 'BAAI/bge-reranker-v2-m3')
 
 
 def rerank(documents_: list, query_: str, top_n_: int = 3):
     response_content: str = post_json(url=QDRANT_RERANK_URL,
                                       data={
-                                          'model': 'GPT-4o',
+                                          'model': QDRANT_RERANK_MODEL,
                                           "top_n": top_n_,
                                           'documents': documents_,
                                           "query": query_
@@ -135,13 +138,13 @@ def readChunks(filePath):
 if __name__ == '__main__':
     print(QDRANT_EMBD_URL)
     print(QDRANT_EMBD_KEY)
-    test = embd(['你好'])
-    # print(QDRANT_RERANK_URL)
-    # print(QDRANT_RERANK_KEY)
-    # test = rerank([
-    #     "hi",
-    #     "it is a bear",
-    #     "world",
-    #     "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
-    #     "endemic to China."
-    # ], "What is panda?")
+    test1 = embd(['你好'])
+    print(QDRANT_RERANK_URL)
+    print(QDRANT_RERANK_KEY)
+    test2 = rerank([
+        "hi",
+        "it is a bear",
+        "world",
+        "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
+        "endemic to China."
+    ], "What is panda?")
