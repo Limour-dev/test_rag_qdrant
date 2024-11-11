@@ -58,6 +58,34 @@ def embd(input_: list):
     return [(input_[i], data[i]['embedding']) for i in range(len(data))]
 
 
+QDRANT_RERANK_URL = os.getenv('QDRANT_RERANK_URL', 'http://localhost:8080/v1/rerank')
+QDRANT_RERANK_KEY = os.getenv('QDRANT_EMBD_KEY', QDRANT_EMBD_KEY)
+
+
+def rerank(documents_: list, query_: str, top_n_: int = 3):
+    response_content: str = post_json(url=QDRANT_RERANK_URL,
+                                      data={
+                                          'model': 'GPT-4o',
+                                          "top_n": top_n_,
+                                          'documents': documents_,
+                                          "query": query_
+                                      },
+                                      headers={'Authorization': QDRANT_RERANK_KEY})
+    response: dict = json.loads(response_content)
+    if type(response) is not dict or not response:
+        print(response_content)
+        return
+    data: list = response.get('results', [])
+    if not data:
+        print(response_content)
+        return
+    res = []
+    for chunk in data:
+        res.append((documents_[chunk['index']], chunk['relevance_score']))
+    res.sort(key=lambda x: x[1], reverse=True)
+    return res
+
+
 reg_q = re.compile(r'''['"“”‘’「」『』]''')
 reg_e = re.compile(r'''[?!。？！]''')
 
@@ -107,4 +135,13 @@ def readChunks(filePath):
 if __name__ == '__main__':
     print(QDRANT_EMBD_URL)
     print(QDRANT_EMBD_KEY)
-    test = embd(['你好'])
+    # test = embd(['你好'])
+    print(QDRANT_RERANK_URL)
+    print(QDRANT_RERANK_KEY)
+    test = rerank([
+        "hi",
+        "it is a bear",
+        "world",
+        "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
+        "endemic to China."
+    ], "What is panda?")
