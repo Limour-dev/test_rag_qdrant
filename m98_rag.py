@@ -14,7 +14,11 @@ def post_json(url: str, data: dict, headers: dict, decoding='utf-8'):
     try:
         with urllib.request.urlopen(request) as response:
             response_content = response.read()
-            return response_content.decode(decoding)
+        res: dict = json.loads(response_content.decode(decoding))
+        if type(res) is not dict or not res:
+            print(response_content)
+            raise 'no data'
+        return res
     except urllib.error.HTTPError as e:
         # 输出HTTP状态码和原因
         print(f"HTTP error occurred: {e.code} - {e.reason}")
@@ -32,29 +36,30 @@ def post_json(url: str, data: dict, headers: dict, decoding='utf-8'):
         raise e
 
 
+def getData(r_: dict, key_: str):
+    data = r_.get(key_)
+    if not data:
+        print(r_)
+        raise 'no data'
+    return data
+
+
 QDRANT_EMBD_URL = os.getenv('QDRANT_EMBD_URL', 'http://localhost:8080/v1/embeddings')
 QDRANT_EMBD_KEY = 'Bearer ' + os.getenv('QDRANT_EMBD_KEY', 'no-key')
 QDRANT_EMBD_MODEL = os.getenv('QDRANT_EMBD_MODEL', 'text-embedding-3-small')
 
 
 def embd(input_: list):
-    response_content: str = post_json(url=QDRANT_EMBD_URL,
-                                      data={
-                                          'model': QDRANT_EMBD_MODEL,
-                                          "encoding_format": "float",
-                                          'input': input_
-                                      },
-                                      headers={'Authorization': QDRANT_EMBD_KEY})
-    response: dict = json.loads(response_content)
-    if type(response) is not dict or not response:
-        print(response_content)
-        return
-    data: list = response.get('data', [])
-    if not data:
-        print(response_content)
-        return
+    response: dict = post_json(url=QDRANT_EMBD_URL,
+                               data={
+                                   'model': QDRANT_EMBD_MODEL,
+                                   "encoding_format": "float",
+                                   'input': input_
+                               },
+                               headers={'Authorization': QDRANT_EMBD_KEY})
+    data: list = getData(response, 'data')
     if len(data) != len(input_):
-        print(response_content)
+        print(response)
         return
     return [(input_[i], data[i]['embedding']) for i in range(len(data))]
 
@@ -66,22 +71,15 @@ QDRANT_RERANK_MODEL = os.getenv('QDRANT_RERANK_MODEL', 'BAAI/bge-reranker-v2-m3'
 
 
 def rerank(documents_: list, query_: str, top_n_: int = 3):
-    response_content: str = post_json(url=QDRANT_RERANK_URL,
-                                      data={
-                                          'model': QDRANT_RERANK_MODEL,
-                                          "top_n": top_n_,
-                                          'documents': documents_,
-                                          "query": query_
-                                      },
-                                      headers={'Authorization': QDRANT_RERANK_KEY})
-    response: dict = json.loads(response_content)
-    if type(response) is not dict or not response:
-        print(response_content)
-        return
-    data: list = response.get('results', [])
-    if not data:
-        print(response_content)
-        return
+    response: dict = post_json(url=QDRANT_RERANK_URL,
+                               data={
+                                   'model': QDRANT_RERANK_MODEL,
+                                   "top_n": top_n_,
+                                   'documents': documents_,
+                                   "query": query_
+                               },
+                               headers={'Authorization': QDRANT_RERANK_KEY})
+    data: list = getData(response, 'results')
     res = []
     for chunk in data:
         res.append((documents_[chunk['index']], chunk['relevance_score']))
@@ -140,21 +138,14 @@ QDRANT_KEY = os.getenv('QDRANT_KEY', '')
 
 
 def qdrant(vector_: list, collection_name_: str = 'my_collection', limit_: int = 5):
-    response_content: str = post_json(url=QDRANT_URL % collection_name_,
-                                      data={
-                                          'vector': vector_,
-                                          "limit": limit_,
-                                          'with_payload': True
-                                      },
-                                      headers={'api-key': QDRANT_KEY})
-    response: dict = json.loads(response_content)
-    if type(response) is not dict or not response:
-        print(response_content)
-        return
-    data: list = response.get('result', [])
-    if not data:
-        print(response_content)
-        return
+    response: dict = post_json(url=QDRANT_URL % collection_name_,
+                               data={
+                                   'vector': vector_,
+                                   "limit": limit_,
+                                   'with_payload': True
+                               },
+                               headers={'api-key': QDRANT_KEY})
+    data: list = getData(response, 'result')
     return [res['payload']['text'] for res in data]
 
 
