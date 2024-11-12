@@ -135,16 +135,45 @@ def readChunks(filePath):
     return retn
 
 
+QDRANT_URL = os.getenv('QDRANT_URL', 'http://localhost:6333') + '/collections/%s/points/search'
+QDRANT_KEY = os.getenv('QDRANT_KEY', '')
+
+
+def qdrant(vector_: list, collection_name_: str = 'my_collection', limit_: int = 5):
+    response_content: str = post_json(url=QDRANT_URL % collection_name_,
+                                      data={
+                                          'vector': vector_,
+                                          "limit": limit_,
+                                          'with_payload': True
+                                      },
+                                      headers={'api-key': QDRANT_KEY})
+    response: dict = json.loads(response_content)
+    if type(response) is not dict or not response:
+        print(response_content)
+        return
+    data: list = response.get('result', [])
+    if not data:
+        print(response_content)
+        return
+    return [res['payload']['text'] for res in data]
+
+
 if __name__ == '__main__':
     print(QDRANT_EMBD_URL)
     print(QDRANT_EMBD_KEY)
-    test1 = embd(['你好'])
+    testQ = '机器人限拥令是什么'
+    test1 = embd([testQ])
     print(QDRANT_RERANK_URL)
     print(QDRANT_RERANK_KEY)
-    test2 = rerank([
-        "hi",
-        "it is a bear",
-        "world",
-        "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
-        "endemic to China."
-    ], "What is panda?")
+    # test2 = rerank([
+    #     "hi",
+    #     "it is a bear",
+    #     "world",
+    #     "The giant panda (Ailuropoda melanoleuca), sometimes called a panda bear or simply panda, is a bear species "
+    #     "endemic to China."
+    # ], "What is panda?")
+    print(QDRANT_URL % 'my_collection')
+    print(QDRANT_KEY)
+    test3 = qdrant(test1[0][1][:256])
+    test2 = rerank(test3, testQ)
+    print(('\n' + '=' * 50 + '\n').join(x[0] for x in test2))
